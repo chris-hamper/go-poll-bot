@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/nlopes/slack"
 )
 
 func main() {
-	// key := os.Getenv("SLACK_API_KEY")
+	// secret := os.Getenv("SLACK_SIGNING_SECRET")
+	verificationToken := os.Getenv("SLACK_VERIFICATION_TOKEN")
 
 	http.HandleFunc("/command", func(w http.ResponseWriter, r *http.Request) {
 		cmd, err := slack.SlashCommandParse(r)
@@ -20,10 +22,11 @@ func main() {
 			return
 		}
 
-		//		if !cmd.ValidateToken(verificationToken) {
-		//			w.WriteHeader(http.StatusUnauthorized)
-		//			return
-		//		}
+		// @todo - Use newer signing approach instead.
+		if !cmd.ValidateToken(verificationToken) {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 
 		switch cmd.Command {
 		case "/echo":
