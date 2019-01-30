@@ -28,9 +28,18 @@ func main() {
 		}
 
 		switch cmd.Command {
-		case "/echo":
-			params := &slack.Msg{Text: cmd.Text}
-			fmt.Println(params)
+		case "/pollbot":
+			params := &slack.Msg{
+				Text:         "Hello!",
+				ResponseType: "in_channel",
+				Attachments: []slack.Attachment{
+					{
+						Title:    "New Poll",
+						Fallback: "Please use a client that supports interactive messages to see this poll.",
+					},
+				},
+			}
+
 			b, err := json.Marshal(params)
 			if err != nil {
 				fmt.Println("[ERROR] JSON Marshal failed:", err)
