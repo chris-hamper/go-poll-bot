@@ -1,10 +1,13 @@
 package main
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/nlopes/slack"
 )
@@ -29,13 +32,33 @@ func main() {
 
 		switch cmd.Command {
 		case "/pollbot":
+			// Split command text on spaces, except inside quotes.
+			csv := csv.NewReader(strings.NewReader(cmd.Text))
+			csv.Comma = ' '
+			args, err := csv.Read()
+			if err != nil {
+				fmt.Println("[ERROR] Command text split failed:", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			actions := make([]slack.AttachmentAction, len(args)-1)
+			for i, arg := range args[1:] {
+				actions[i] = slack.AttachmentAction{
+					Name: strconv.Itoa(i),
+					Text: arg,
+					Type: "button",
+				}
+			}
+
 			params := &slack.Msg{
-				Text:         "Hello!",
 				ResponseType: "in_channel",
 				Attachments: []slack.Attachment{
 					{
-						Title:    "New Poll",
-						Fallback: "Please use a client that supports interactive messages to see this poll.",
+						Title:      "Poll: " + args[0],
+						Fallback:   "Please use a client that supports interactive messages to see this poll.",
+						CallbackID: "fix me!",
+						Actions:    actions,
 					},
 				},
 			}
