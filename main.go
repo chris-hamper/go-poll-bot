@@ -43,11 +43,18 @@ func main() {
 			}
 
 			actions := make([]slack.AttachmentAction, len(args)-1)
+			fields := make([]slack.AttachmentField, len(args)-1)
 			for i, arg := range args[1:] {
 				actions[i] = slack.AttachmentAction{
 					Name: strconv.Itoa(i),
 					Text: arg,
 					Type: "button",
+				}
+
+				fields[i] = slack.AttachmentField{
+					Title: arg,
+					Value: "(no votes yet)",
+					Short: false,
 				}
 			}
 
@@ -58,6 +65,7 @@ func main() {
 						Title:      "Poll: " + args[0],
 						Fallback:   "Please use a client that supports interactive messages to see this poll.",
 						CallbackID: "fix me!",
+						Fields:     fields,
 						Actions:    actions,
 					},
 				},
