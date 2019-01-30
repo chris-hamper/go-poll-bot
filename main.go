@@ -16,8 +16,7 @@ func main() {
 	http.HandleFunc("/command", func(w http.ResponseWriter, r *http.Request) {
 		cmd, err := slack.SlashCommandParse(r)
 		if err != nil {
-			fmt.Println("[ERROR] SlashCommandParse failed!")
-			fmt.Println(err)
+			fmt.Println("[ERROR] SlashCommandParse failed:", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -34,13 +33,13 @@ func main() {
 			fmt.Println(params)
 			b, err := json.Marshal(params)
 			if err != nil {
-				fmt.Println("[ERROR] JSON Marshal failed!")
-				fmt.Println(err)
+				fmt.Println("[ERROR] JSON Marshal failed:", err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 			w.Header().Set("Content-Type", "application/json")
 			w.Write(b)
+			fmt.Println("[DEBUG] JSON message:", string(b))
 
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
