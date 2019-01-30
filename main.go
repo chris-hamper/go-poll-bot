@@ -50,12 +50,12 @@ func main() {
 			for i, arg := range args[1:] {
 				actions[i] = slack.AttachmentAction{
 					Name: strconv.Itoa(i),
-					Text: arg + " (0)",
+					Text: arg,
 					Type: "button",
 				}
 
 				fields[i] = slack.AttachmentField{
-					Title: arg,
+					Title: arg + " (0)",
 					Value: "(no votes yet)",
 					Short: false,
 				}
