@@ -11,7 +11,7 @@ import (
 func main() {
 	// key := os.Getenv("SLACK_API_KEY")
 
-	http.HandleFunc("/command/pollbot", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/command", func(w http.ResponseWriter, r *http.Request) {
 		cmd, err := slack.SlashCommandParse(r)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
