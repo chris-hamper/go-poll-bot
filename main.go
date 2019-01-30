@@ -32,8 +32,11 @@ func main() {
 
 		switch cmd.Command {
 		case "/pollbot":
+			// Clean up "smart quotes".
+			text := strings.Map(normalizeQuotes, cmd.Text)
+
 			// Split command text on spaces, except inside quotes.
-			csv := csv.NewReader(strings.NewReader(cmd.Text))
+			csv := csv.NewReader(strings.NewReader(text))
 			csv.Comma = ' '
 			args, err := csv.Read()
 			if err != nil {
@@ -93,4 +96,12 @@ func main() {
 
 	fmt.Println("[INFO] Server listening on port 3000")
 	http.ListenAndServe(":3000", nil)
+}
+
+func normalizeQuotes(r rune) rune {
+	switch r {
+	case '“', '”':
+		return '"'
+	}
+	return r
 }
