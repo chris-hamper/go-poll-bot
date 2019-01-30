@@ -48,6 +48,10 @@ func main() {
 		}
 	})
 
+	http.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
 	fmt.Println("[INFO] Server listening on port 3000")
 	http.ListenAndServe(":3000", nil)
 }
