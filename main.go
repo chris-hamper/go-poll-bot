@@ -60,7 +60,6 @@ func main() {
 			}
 			w.Header().Set("Content-Type", "application/json")
 			w.Write(b)
-			log.Println("[DEBUG] JSON message:", string(b))
 
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
