@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/csv"
 	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -18,7 +18,7 @@ func main() {
 	http.HandleFunc("/command", func(w http.ResponseWriter, r *http.Request) {
 		cmd, err := slack.SlashCommandParse(r)
 		if err != nil {
-			fmt.Println("[ERROR] SlashCommandParse failed:", err)
+			log.Println("[ERROR] SlashCommandParse failed:", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -39,7 +39,7 @@ func main() {
 			csv.Comma = ' '
 			args, err := csv.Read()
 			if err != nil {
-				fmt.Println("[ERROR] Command text split failed:", err)
+				log.Println("[ERROR] Command text split failed:", err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -54,13 +54,13 @@ func main() {
 
 			b, err := json.Marshal(params)
 			if err != nil {
-				fmt.Println("[ERROR] JSON Marshal failed:", err)
+				log.Println("[ERROR] JSON Marshal failed:", err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 			w.Header().Set("Content-Type", "application/json")
 			w.Write(b)
-			fmt.Println("[DEBUG] JSON message:", string(b))
+			log.Println("[DEBUG] JSON message:", string(b))
 
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
@@ -77,7 +77,7 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	fmt.Println("[INFO] Server listening on port 3000")
+	log.Println("[INFO] Server listening on port 3000")
 	http.ListenAndServe(":3000", nil)
 }
 
