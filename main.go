@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/nlopes/slack"
@@ -45,33 +44,12 @@ func main() {
 				return
 			}
 
-			actions := make([]slack.AttachmentAction, len(args)-1)
-			fields := make([]slack.AttachmentField, len(args)-1)
-			for i, arg := range args[1:] {
-				actions[i] = slack.AttachmentAction{
-					Name: strconv.Itoa(i),
-					Text: arg,
-					Type: "button",
-				}
-
-				fields[i] = slack.AttachmentField{
-					Title: arg + " (0)",
-					Value: "(no votes yet)",
-					Short: false,
-				}
-			}
+			// Create the poll.
+			poll := createPoll(cmd.TriggerID, cmd.UserID, args[0], args[1:])
 
 			params := &slack.Msg{
 				ResponseType: "in_channel",
-				Attachments: []slack.Attachment{
-					{
-						Title:      "Poll: " + args[0],
-						Fallback:   "Please use a client that supports interactive messages to see this poll.",
-						CallbackID: "fix me!",
-						Fields:     fields,
-						Actions:    actions,
-					},
-				},
+				Attachments:  []slack.Attachment{*poll.toSlackAttachment()},
 			}
 
 			b, err := json.Marshal(params)
