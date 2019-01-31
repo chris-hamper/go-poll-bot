@@ -68,6 +68,11 @@ func main() {
 		}
 	})
 
+	// Register handler to receive interactive messages from slack.
+	http.Handle("/interaction", interactionHandler{
+		verificationToken: verificationToken,
+	})
+
 	http.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
