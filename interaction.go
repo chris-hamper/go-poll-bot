@@ -62,10 +62,19 @@ func (h interactionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	replacement := &slack.Msg{
 		ResponseType: "in_channel",
+		ReplaceOriginal: true,
 		Attachments:  []slack.Attachment{*poll.toSlackAttachment()},
 	}
 
-	w.Header().Add("Content-type", "application/json")
+	encoder := json.NewEncoder(w)
+	encoder.SetEscapeHTML(false)
+	err = encoder.Encode(&replacement)
+	if err != nil {
+		log.Println("[ERROR] JSON Marshal failed:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(&replacement)
 }

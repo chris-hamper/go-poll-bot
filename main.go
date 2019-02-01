@@ -15,7 +15,9 @@ func main() {
 	// secret := os.Getenv("SLACK_SIGNING_SECRET")
 	verificationToken := os.Getenv("SLACK_VERIFICATION_TOKEN")
 
+	// @todo - move to separate handler file
 	http.HandleFunc("/command", func(w http.ResponseWriter, r *http.Request) {
+		// @todo - sanitization?
 		cmd, err := slack.SlashCommandParse(r)
 		if err != nil {
 			log.Println("[ERROR] SlashCommandParse failed:", err)

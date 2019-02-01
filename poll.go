@@ -80,7 +80,7 @@ func (p Poll) toSlackAttachment() *slack.Attachment {
 
 		votersStr := ""
 		for userID := range voters {
-			votersStr += fmt.Sprintf("%v ", userID)
+			votersStr += fmt.Sprintf("<@%v> ", userID)
 		}
 
 		fields[i] = slack.AttachmentField{
