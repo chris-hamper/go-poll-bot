@@ -1,4 +1,4 @@
-package main
+package poll
 
 import (
 	"fmt"
@@ -30,7 +30,7 @@ type Poll struct {
 var polls = make(map[string]Poll)
 var crc64Table = crc64.MakeTable(crc64.ISO)
 
-func createPoll(id, owner, title string, options []string) *Poll {
+func CreatePoll(id, owner, title string, options []string) *Poll {
 	// Shorten ID by "hashing" it via CRC-64
 	id = fmt.Sprintf("%016x", crc64.Checksum([]byte(id), crc64Table))
 
@@ -43,11 +43,11 @@ func createPoll(id, owner, title string, options []string) *Poll {
 	return &poll
 }
 
-func getPollByID(id string) Poll {
+func GetPollByID(id string) Poll {
 	return polls[id]
 }
 
-func (p *Poll) toggleVote(user, option string) {
+func (p *Poll) ToggleVote(user, option string) {
 	log.Println("[DEBUG] toggleVote:", user, option)
 	_, ok := p.Votes[option]
 	if !ok {
@@ -65,7 +65,7 @@ func (p *Poll) toggleVote(user, option string) {
 	}
 }
 
-func (p Poll) toSlackAttachment() *slack.Attachment {
+func (p Poll) ToSlackAttachment() *slack.Attachment {
 	actions := make([]slack.AttachmentAction, len(p.Votes))
 	fields := make([]slack.AttachmentField, len(p.Votes))
 

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/chris-hamper/go-slack-poll/poll"
 	"github.com/nlopes/slack"
 )
 
@@ -57,13 +58,13 @@ func (h interactionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	pollID := action.Name[:16]
 	option := action.Name[17:]
 
-	poll := getPollByID(pollID)
-	poll.toggleVote(message.User.ID, option)
+	p := poll.GetPollByID(pollID)
+	p.ToggleVote(message.User.ID, option)
 
 	replacement := &slack.Msg{
 		ResponseType:    "in_channel",
 		ReplaceOriginal: true,
-		Attachments:     []slack.Attachment{*poll.toSlackAttachment()},
+		Attachments:     []slack.Attachment{*p.ToSlackAttachment()},
 	}
 
 	encoder := json.NewEncoder(w)

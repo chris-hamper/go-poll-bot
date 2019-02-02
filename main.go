@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/chris-hamper/go-slack-poll/poll"
 	"github.com/nlopes/slack"
 )
 
@@ -47,11 +48,11 @@ func main() {
 			}
 
 			// Create the poll.
-			poll := createPoll(cmd.TriggerID, cmd.UserID, args[0], args[1:])
+			p := poll.CreatePoll(cmd.TriggerID, cmd.UserID, args[0], args[1:])
 
 			params := &slack.Msg{
 				ResponseType: "in_channel",
-				Attachments:  []slack.Attachment{*poll.toSlackAttachment()},
+				Attachments:  []slack.Attachment{*p.ToSlackAttachment()},
 			}
 
 			b, err := json.Marshal(params)
