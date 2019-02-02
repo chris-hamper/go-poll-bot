@@ -49,6 +49,7 @@ func CreatePoll(owner, title string, options []string) *Poll {
 	for _, option := range options {
 		poll.Votes[option] = make(Voters)
 	}
+	log.Println("[INFO] CreatePoll:", poll)
 	return &poll
 }
 
@@ -58,7 +59,6 @@ func GetPollByID(id string) *Poll {
 		log.Println("[ERROR] Can't get poll from Redis store:", err)
 		return nil
 	}
-	log.Println("[DEBUG] GetPoolByID:", len(s), string(s))
 
 	var p Poll
 	dec := json.NewDecoder(strings.NewReader(s))
@@ -67,21 +67,17 @@ func GetPollByID(id string) *Poll {
 		log.Println("[ERROR] Can't decode poll:", err)
 		return nil
 	}
-
-	log.Println("[DEBUG] GetPoolByID:", p)
 	return &p
 }
 
 func (p Poll) Save() {
-	log.Println("[DEBUG] Save:", p)
-
 	var b bytes.Buffer
 	enc := json.NewEncoder(&b)
 	enc.Encode(p)
-
 	s := string(b.Bytes())
+	log.Println("[INFO] Saving poll to Redis store:", s)
+
 	pollKey := "poll:" + p.ID
-	log.Println("[DEBUG] Saving poll", pollKey, "to Redis store:", b.Len(), s)
 	err := db.Cmd("SET", pollKey, s).Err
 	if err != nil {
 		log.Println("[ERROR] Can't save poll", pollKey, "to Redis store:", err)
@@ -89,7 +85,7 @@ func (p Poll) Save() {
 }
 
 func (p *Poll) ToggleVote(user, option string) {
-	log.Println("[DEBUG] toggleVote:", user, option)
+	log.Println("[INFO] toggleVote:", user, option)
 	_, ok := p.Votes[option]
 	if !ok {
 		log.Println("[ERROR] No 'option' in p.Votes for:", option)
