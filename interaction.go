@@ -61,20 +61,18 @@ func (h interactionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	poll.toggleVote(message.User.ID, option)
 
 	replacement := &slack.Msg{
-		ResponseType: "in_channel",
+		ResponseType:    "in_channel",
 		ReplaceOriginal: true,
-		Attachments:  []slack.Attachment{*poll.toSlackAttachment()},
+		Attachments:     []slack.Attachment{*poll.toSlackAttachment()},
 	}
 
 	encoder := json.NewEncoder(w)
 	encoder.SetEscapeHTML(false)
-	err = encoder.Encode(&replacement)
-	if err != nil {
-		log.Println("[ERROR] JSON Marshal failed:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
 
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	err = encoder.Encode(&replacement)
+	if err != nil {
+		log.Println("[ERROR] JSON Encode failed:", err)
+	}
 }
