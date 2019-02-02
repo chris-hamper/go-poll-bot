@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 
@@ -30,9 +31,9 @@ var db *pool.Pool
 
 func init() {
 	var err error
-	// Establish a pool of 10 connections to the Redis server listening on
-	// port 6379 of the local machine.
-	db, err = pool.New("tcp", "localhost:6379", 10)
+	redisHost := os.Getenv("REDIS_HOST")
+
+	db, err = pool.New("tcp", redisHost+":6379", 10)
 	if err != nil {
 		log.Panic(err)
 	}
