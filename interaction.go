@@ -37,7 +37,7 @@ func (h interactionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var message slack.AttachmentActionCallback
-	if err := json.Unmarshal([]byte(jsonStr), &message); err != nil {
+	if err = json.Unmarshal([]byte(jsonStr), &message); err != nil {
 		log.Printf("[ERROR] Failed to decode json message from slack: %s", jsonStr)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
