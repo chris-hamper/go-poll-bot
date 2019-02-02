@@ -39,6 +39,7 @@ func init() {
 	}
 }
 
+// CreatePoll creates a new Poll.
 func CreatePoll(owner, title string, options []string) *Poll {
 	id, err := db.Cmd("INCR", "next-poll").Int()
 	if err != nil {
@@ -54,6 +55,7 @@ func CreatePoll(owner, title string, options []string) *Poll {
 	return &poll
 }
 
+// GetPollByID gets the Poll with the given ID from the database, or nil.
 func GetPollByID(id string) *Poll {
 	s, err := db.Cmd("GET", "poll:"+id).Str()
 	if err != nil {
@@ -71,6 +73,7 @@ func GetPollByID(id string) *Poll {
 	return &p
 }
 
+// Save stores the Poll in the database.
 func (p Poll) Save() {
 	var b bytes.Buffer
 	enc := json.NewEncoder(&b)
@@ -85,6 +88,7 @@ func (p Poll) Save() {
 	}
 }
 
+// ToggleVote inverts the voting status for the given user on a given option.
 func (p *Poll) ToggleVote(user, option string) {
 	log.Println("[INFO] toggleVote:", user, option)
 	_, ok := p.Votes[option]
@@ -103,6 +107,7 @@ func (p *Poll) ToggleVote(user, option string) {
 	}
 }
 
+// ToSlackAttachment renders a Poll into a Slack message Attachment.
 func (p Poll) ToSlackAttachment() *slack.Attachment {
 	actions := make([]slack.AttachmentAction, len(p.Votes))
 	fields := make([]slack.AttachmentField, len(p.Votes))
