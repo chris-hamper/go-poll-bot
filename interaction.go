@@ -54,8 +54,6 @@ func (h interactionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	action := message.Actions[0]
-	log.Println("[DEBUG] action.Name:", action.Name)
-
 	parts := strings.Split(action.Name, "_")
 
 	p := poll.GetPollByID(parts[0])
