@@ -48,7 +48,8 @@ func main() {
 			}
 
 			// Create the poll.
-			p := poll.CreatePoll(cmd.TriggerID, cmd.UserID, args[0], args[1:])
+			p := poll.CreatePoll(cmd.UserID, args[0], args[1:])
+			p.Save()
 
 			params := &slack.Msg{
 				ResponseType: "in_channel",

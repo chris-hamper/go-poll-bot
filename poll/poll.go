@@ -2,9 +2,11 @@ package poll
 
 import (
 	"bytes"
-	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
+	"strings"
 
 	"github.com/mediocregopher/radix.v2/pool"
 	"github.com/nlopes/slack"
@@ -36,14 +38,14 @@ func init() {
 	}
 }
 
-func CreatePoll(id, owner, title string, options []string) *Poll {
-	id, err := db.Cmd("INCR", "next-poll").Str()
+func CreatePoll(owner, title string, options []string) *Poll {
+	id, err := db.Cmd("INCR", "next-poll").Int()
 	if err != nil {
 		log.Println("[ERROR] Can't get next poll ID:", err)
 		return nil
 	}
 
-	poll := Poll{ID: id, Owner: owner, Title: title, Votes: make(Votes)}
+	poll := Poll{ID: strconv.Itoa(id), Owner: owner, Title: title, Votes: make(Votes)}
 	for _, option := range options {
 		poll.Votes[option] = make(Voters)
 	}
@@ -51,26 +53,36 @@ func CreatePoll(id, owner, title string, options []string) *Poll {
 }
 
 func GetPollByID(id string) *Poll {
-	b, err := db.Cmd("GET", "poll:"+id).Bytes()
+	s, err := db.Cmd("GET", "poll:"+id).Str()
 	if err != nil {
-		log.Println("[ERROR] Can't add poll to Redis store:", err)
+		log.Println("[ERROR] Can't get poll from Redis store:", err)
+		return nil
+	}
+	log.Println("[DEBUG] GetPoolByID:", len(s), string(s))
+
+	var p Poll
+	dec := json.NewDecoder(strings.NewReader(s))
+	err = dec.Decode(&p)
+	if err != nil {
+		log.Println("[ERROR] Can't decode poll:", err)
 		return nil
 	}
 
-	var p Poll
-	dec := gob.NewDecoder(bytes.NewReader(b))
-	dec.Decode(&p)
-
+	log.Println("[DEBUG] GetPoolByID:", p)
 	return &p
 }
 
 func (p Poll) Save() {
+	log.Println("[DEBUG] Save:", p)
+
 	var b bytes.Buffer
-	enc := gob.NewEncoder(&b)
+	enc := json.NewEncoder(&b)
 	enc.Encode(p)
 
+	s := string(b.Bytes())
 	pollKey := "poll:" + p.ID
-	err := db.Cmd("SET", pollKey, b).Err
+	log.Println("[DEBUG] Saving poll", pollKey, "to Redis store:", b.Len(), s)
+	err := db.Cmd("SET", pollKey, s).Err
 	if err != nil {
 		log.Println("[ERROR] Can't save poll", pollKey, "to Redis store:", err)
 	}
