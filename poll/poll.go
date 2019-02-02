@@ -1,50 +1,79 @@
 package poll
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
-	"hash/crc64"
 	"log"
 
+	"github.com/mediocregopher/radix.v2/pool"
 	"github.com/nlopes/slack"
 )
 
-// Voters represents a vote from the user specified in the key.
+// Voters represents a set of votes from the users specified in the keys.
 type Voters map[string]int
 
-// Votes maps option title to Voters who have voted for it.
+// Votes maps an option title to Voters who have voted for it.
 type Votes map[string]Voters
 
 // Poll holds all information related to a poll created via Slack.
 type Poll struct {
-	ID         string
-	Owner      string
-	Title      string
-	Votes      Votes // Maps option title to Voters who have voted for it.
+	ID    string
+	Owner string
+	Title string
+	Votes Votes // Maps option title to Voters who have voted for it.
 }
 
-// type PollOption struct {
-// 	Title  string
-// 	Voters map[string]int // "Set" of user IDs who have voted
-// }
+var db *pool.Pool
 
-var polls = make(map[string]Poll)
-var crc64Table = crc64.MakeTable(crc64.ISO)
+func init() {
+	var err error
+	// Establish a pool of 10 connections to the Redis server listening on
+	// port 6379 of the local machine.
+	db, err = pool.New("tcp", "localhost:6379", 10)
+	if err != nil {
+		log.Panic(err)
+	}
+}
 
 func CreatePoll(id, owner, title string, options []string) *Poll {
-	// Shorten ID by "hashing" it via CRC-64
-	id = fmt.Sprintf("%016x", crc64.Checksum([]byte(id), crc64Table))
+	id, err := db.Cmd("INCR", "next-poll").Str()
+	if err != nil {
+		log.Println("[ERROR] Can't get next poll ID:", err)
+		return nil
+	}
 
 	poll := Poll{ID: id, Owner: owner, Title: title, Votes: make(Votes)}
 	for _, option := range options {
 		poll.Votes[option] = make(Voters)
 	}
-
-	polls[id] = poll
 	return &poll
 }
 
-func GetPollByID(id string) Poll {
-	return polls[id]
+func GetPollByID(id string) *Poll {
+	b, err := db.Cmd("GET", "poll:"+id).Bytes()
+	if err != nil {
+		log.Println("[ERROR] Can't add poll to Redis store:", err)
+		return nil
+	}
+
+	var p Poll
+	dec := gob.NewDecoder(bytes.NewReader(b))
+	dec.Decode(&p)
+
+	return &p
+}
+
+func (p Poll) Save() {
+	var b bytes.Buffer
+	enc := gob.NewEncoder(&b)
+	enc.Encode(p)
+
+	pollKey := "poll:" + p.ID
+	err := db.Cmd("SET", pollKey, b).Err
+	if err != nil {
+		log.Println("[ERROR] Can't save poll", pollKey, "to Redis store:", err)
+	}
 }
 
 func (p *Poll) ToggleVote(user, option string) {
