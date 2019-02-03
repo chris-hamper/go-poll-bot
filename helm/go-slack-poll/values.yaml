@@ -46,3 +46,6 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+env:
+  slackVerificationToken: "" # Specify from command line with: --set env.slackVerificationToken

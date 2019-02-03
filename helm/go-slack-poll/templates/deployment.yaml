@@ -23,6 +23,19 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: "SLACK_VERIFICATION_TOKEN"
+              valueFrom:
+                secretKeyRef:
+                  key: slackVerificationToken
+                  name: {{ .Release.Name }}-auth
+            - name: "REDIS_HOST"
+              value: {{ .Release.Name }}-redis-master
+            - name: "REDIS_PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  key: redis-password
+                  name: {{ .Release.Name }}-redis
           ports:
             - name: http
               containerPort: 3000
