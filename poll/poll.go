@@ -32,10 +32,18 @@ var db *pool.Pool
 func init() {
 	var err error
 	redisHost := os.Getenv("REDIS_HOST")
+	passwd := os.Getenv("REDIS_PASSWORD")
 
 	db, err = pool.New("tcp", redisHost+":6379", 10)
 	if err != nil {
 		log.Panic(err)
+	}
+
+	if passwd != "" {
+		err = db.Cmd("AUTH", passwd).Err
+		if err != nil {
+			log.Panic(err)
+		}
 	}
 }
 
