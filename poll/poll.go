@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/mediocregopher/radix.v2/pool"
+	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/nlopes/slack"
 )
 
@@ -32,19 +33,26 @@ var db *pool.Pool
 func init() {
 	var err error
 	redisHost := os.Getenv("REDIS_HOST")
+
+	db, err = pool.NewCustom("tcp", redisHost+":6379", 10, authDial)
+	if err != nil {
+		log.Panic("Redis pool connections failed:", err)
+	}
+}
+
+func authDial(network, addr string) (*redis.Client, error) {
 	passwd := os.Getenv("REDIS_PASSWORD")
 
-	db, err = pool.New("tcp", redisHost+":6379", 10)
+	client, err := redis.Dial(network, addr)
 	if err != nil {
-		log.Panic(err)
+		return nil, err
+	}
+	if err = client.Cmd("AUTH", passwd).Err; err != nil {
+		client.Close()
+		return nil, err
 	}
 
-	if passwd != "" {
-		err = db.Cmd("AUTH", passwd).Err
-		if err != nil {
-			log.Panic(err)
-		}
-	}
+	return client, nil
 }
 
 // CreatePoll creates a new Poll.
