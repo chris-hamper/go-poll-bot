@@ -26,6 +26,7 @@ func main() {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		log.Println("[DEBUG] command:", cmd)
 
 		// @todo - Use newer signing approach instead.
 		if !cmd.ValidateToken(verificationToken) {
