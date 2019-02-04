@@ -15,6 +15,7 @@ import (
 func main() {
 	// secret := os.Getenv("SLACK_SIGNING_SECRET")
 	verificationToken := os.Getenv("SLACK_VERIFICATION_TOKEN")
+	verificationToken = strings.TrimSpace(verificationToken)
 
 	// @todo - move to separate handler file
 	http.HandleFunc("/command", func(w http.ResponseWriter, r *http.Request) {
@@ -28,6 +29,7 @@ func main() {
 
 		// @todo - Use newer signing approach instead.
 		if !cmd.ValidateToken(verificationToken) {
+			log.Printf("[ERROR] Invalid token: '%s'", cmd.Token)
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
