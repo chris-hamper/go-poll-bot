@@ -18,4 +18,5 @@ WORKDIR /app
 COPY --from=build /bin/go-app .
 
 EXPOSE 3000
+USER guest
 ENTRYPOINT ./go-app
