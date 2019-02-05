@@ -33,8 +33,13 @@ var db *pool.Pool
 func init() {
 	var err error
 	redisHost := os.Getenv("REDIS_HOST")
+	_, hasAuth := os.LookupEnv("REDIS_PASSWORD")
 
-	db, err = pool.NewCustom("tcp", redisHost+":6379", 10, authDial)
+	if hasAuth {
+		db, err = pool.NewCustom("tcp", redisHost+":6379", 10, authDial)
+	} else {
+		db, err = pool.New("tcp", redisHost+":6379", 10)
+	}
 	if err != nil {
 		log.Panic("Redis pool connections failed:", err)
 	}
