@@ -98,6 +98,8 @@ func GetPollByID(id string) *Poll {
 func (p Poll) Save() {
 	var b bytes.Buffer
 	enc := json.NewEncoder(&b)
+	enc.SetEscapeHTML(false)
+
 	enc.Encode(p)
 	s := string(b.Bytes())
 	log.Println("[INFO] Saving poll to Redis store:", s)
