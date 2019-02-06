@@ -101,7 +101,7 @@ func (p Poll) Save() {
 	enc.SetEscapeHTML(false)
 
 	enc.Encode(p)
-	s := string(b.Bytes())
+	s := b.String()
 	log.Println("[INFO] Saving poll to Redis store:", s)
 
 	pollKey := "poll:" + p.ID
