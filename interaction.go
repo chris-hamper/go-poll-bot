@@ -14,13 +14,20 @@ import (
 
 // interactionHandler handles interactive message response.
 type interactionHandler struct {
-	verificationToken string
+	signingSecret []byte
 }
 
 func (h interactionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		log.Printf("[ERROR] Invalid method: %s", r.Method)
 		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Only accept message from slack with valid token.
+	if !validateRequest(r) {
+		log.Printf("[ERROR] Message validation failed")
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
@@ -37,20 +44,12 @@ func (h interactionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	log.Println("[DEBUG] interaction:", jsonStr)
+	log.Println("[DEBUG] Interaction:", jsonStr)
 
 	var message slack.AttachmentActionCallback
 	if err = json.Unmarshal([]byte(jsonStr), &message); err != nil {
 		log.Printf("[ERROR] Failed to decode json message from slack: %s", jsonStr)
 		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	// Only accept message from slack with valid token.
-	// @todo - use new verification method
-	if message.Token != h.verificationToken {
-		log.Printf("[ERROR] Invalid token: %s", message.Token)
-		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
