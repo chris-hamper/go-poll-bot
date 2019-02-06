@@ -10,9 +10,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/chris-hamper/go-slack-poll/poll"
 	"github.com/nlopes/slack"
@@ -104,6 +107,18 @@ func normalizeQuotes(r rune) rune {
 
 func validateRequest(r *http.Request) bool {
 	timestamp := r.Header["X-Slack-Request-Timestamp"][0]
+
+	// Verify the timestamp is less than 5 minutes old, to avoid replay attacks.
+	now := time.Now().Unix()
+	messageTime, err := strconv.ParseInt(timestamp, 0, 64)
+	if err != nil {
+		log.Println("[ERROR] Invalid timestamp:", timestamp)
+		return false
+	}
+	if math.Abs(float64(now-messageTime)) > 5*60 {
+		log.Println("[ERROR] Timestamp is from > 5 minutes from now")
+		return false
+	}
 
 	// Get the signature and signing version from the HTTP header.
 	parts := strings.Split(r.Header["X-Slack-Signature"][0], "=")
