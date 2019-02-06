@@ -6,7 +6,7 @@ replicaCount: 1
 
 image:
   repository: hampercm/go-slack-poll
-  tag: v0.1.2
+  tag: v0.2.0
   pullPolicy: IfNotPresent
 
 nameOverride: ""
@@ -48,4 +48,4 @@ tolerations: []
 affinity: {}
 
 env:
-  slackVerificationToken: "" # Specify from command line with: --set env.slackVerificationToken
+  slackSigningSecret: "" # Specify from command line with: --set env.slackSigningSecret=`echo "8199830662eeedba6f19594e4ecae333" | base64`

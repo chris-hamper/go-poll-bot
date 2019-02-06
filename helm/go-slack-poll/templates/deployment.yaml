@@ -24,10 +24,10 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-            - name: "SLACK_VERIFICATION_TOKEN"
+            - name: "SLACK_SIGNING_SECRET"
               valueFrom:
                 secretKeyRef:
-                  key: slackVerificationToken
+                  key: slackSigningSecret
                   name: {{ .Release.Name }}-auth
             - name: "REDIS_HOST"
               value: {{ .Release.Name }}-redis-master
