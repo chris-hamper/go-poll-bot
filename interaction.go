@@ -54,7 +54,7 @@ func (h interactionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	action := message.Actions[0]
-	parts := strings.Split(action.Name, "_")
+	parts := strings.SplitN(action.Name, "_", 2)
 
 	p := poll.GetPollByID(parts[0])
 	p.ToggleVote(message.User.ID, parts[1])
