@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/chris-hamper/go-slack-poll/poll"
@@ -54,10 +55,17 @@ func (h interactionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	action := message.Actions[0]
-	parts := strings.SplitN(action.Name, "_", 2)
+	parts := strings.Split(action.Name, "_")
+
+	optionIndex, err := strconv.Atoi(parts[1])
+	if err != nil {
+		log.Printf("[ERROR] Invalid action name: %s", action.Name)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	p := poll.GetPollByID(parts[0])
-	p.ToggleVote(message.User.ID, parts[1])
+	p.ToggleVote(message.User.ID, optionIndex)
 	p.Save()
 
 	replacement := &slack.Msg{

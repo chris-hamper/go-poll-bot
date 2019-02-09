@@ -15,17 +15,19 @@ import (
 	"github.com/nlopes/slack"
 )
 
-// Votes maps an option title to a slice of Voters who have voted for it.
-type Votes map[string]([]string)
+// Option represents on option in a poll, and holds the users who have voted for it.
+type Option struct {
+	Name string
+	Voters []string
+	mux sync.Mutex // Protects "Voters" from being modified in parallel.
+}
 
 // Poll holds all information related to a poll created via Slack.
 type Poll struct {
 	ID    string
 	Owner string
 	Title string
-	Votes Votes
-	// muxVotes Protects "Votes" from being modified in parallel.
-	muxVotes sync.Mutex
+	Options []Option
 }
 
 var db *pool.Pool
@@ -72,10 +74,10 @@ func CreatePoll(owner, title string, options []string) *Poll {
 		ID: strconv.Itoa(id),
 		Owner: owner,
 		Title: title,
-		Votes: make(Votes),
+		Options: make([]Option, len(options)),
 	}
-	for _, option := range options {
-		poll.Votes[option] = make([]string, 0, 10)
+	for i, name := range options {
+		poll.Options[i].Name = name
 	}
 	log.Println("[INFO] CreatePoll:", poll)
 	return &poll
@@ -117,40 +119,37 @@ func (p *Poll) Save() {
 }
 
 // ToggleVote inverts the voting status for the given user on a given option.
-func (p *Poll) ToggleVote(user, option string) {
-	log.Println("[INFO] toggleVote:", user, option)
+func (p *Poll) ToggleVote(user string, optionIndex int) {
+	log.Println("[INFO] toggleVote:", user, optionIndex)
 
-	p.muxVotes.Lock()
-	defer p.muxVotes.Unlock()
-	voters, ok := p.Votes[option]
-	if !ok {
-		log.Println("[ERROR] No 'option' in p.Votes for:", option)
-		return
-	}
+	option := &p.Options[optionIndex]
 
-	for i, voter := range voters {
+	option.mux.Lock()
+	defer option.mux.Unlock()
+	for i, voter := range option.Voters {
 		if voter == user {
 			// Remove voter from the list.
-			p.Votes[option] = append(voters[:i], voters[i+1:]...)
+			option.Voters = append(option.Voters[:i], option.Voters[i+1:]...)
 			return
 		}
 	}
 	
 	// User wasn't found in the list of voters, so append it.
-	p.Votes[option] = append(voters, user)
+	option.Voters = append(option.Voters, user)
 }
 
 // ToSlackAttachment renders a Poll into a Slack message Attachment.
 func (p *Poll) ToSlackAttachment() *slack.Attachment {
-	actions := make([]slack.AttachmentAction, len(p.Votes))
-	fields := make([]slack.AttachmentField, len(p.Votes))
+	actions := make([]slack.AttachmentAction, len(p.Options))
+	fields := make([]slack.AttachmentField, len(p.Options))
 
-	i := 0
 	prefix := p.ID + "_"
-	for optionTitle, voters := range p.Votes {
+	for i := range p.Options {
+		option := &p.Options[i]
+
 		actions[i] = slack.AttachmentAction{
-			Name: prefix + optionTitle,
-			Text: optionTitle,
+			Name: prefix + strconv.Itoa(i),
+			Text: option.Name,
 			Type: "button",
 		}
 
@@ -160,7 +159,7 @@ func (p *Poll) ToSlackAttachment() *slack.Attachment {
 		}
 
 		fields[i] = slack.AttachmentField{
-			Title: fmt.Sprintf("%v (%v)", optionTitle, len(voters)),
+			Title: fmt.Sprintf("%v (%v)", option.Name, len(option.Voters)),
 			Value: votersStr,
 			Short: false,
 		}
