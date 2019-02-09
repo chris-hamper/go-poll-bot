@@ -8,24 +8,24 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/mediocregopher/radix.v2/pool"
 	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/nlopes/slack"
 )
 
-// Voters represents a set of votes from the users specified in the keys.
-type Voters map[string]int
-
-// Votes maps an option title to Voters who have voted for it.
-type Votes map[string]Voters
+// Votes maps an option title to a slice of Voters who have voted for it.
+type Votes map[string]([]string)
 
 // Poll holds all information related to a poll created via Slack.
 type Poll struct {
 	ID    string
 	Owner string
 	Title string
-	Votes Votes // Maps option title to Voters who have voted for it.
+	Votes Votes
+	// muxVotes Protects "Votes" from being modified in parallel.
+	muxVotes sync.Mutex
 }
 
 var db *pool.Pool
@@ -68,9 +68,14 @@ func CreatePoll(owner, title string, options []string) *Poll {
 		return nil
 	}
 
-	poll := Poll{ID: strconv.Itoa(id), Owner: owner, Title: title, Votes: make(Votes)}
+	poll := Poll{
+		ID: strconv.Itoa(id),
+		Owner: owner,
+		Title: title,
+		Votes: make(Votes),
+	}
 	for _, option := range options {
-		poll.Votes[option] = make(Voters)
+		poll.Votes[option] = make([]string, 0, 10)
 	}
 	log.Println("[INFO] CreatePoll:", poll)
 	return &poll
@@ -95,7 +100,7 @@ func GetPollByID(id string) *Poll {
 }
 
 // Save stores the Poll in the database.
-func (p Poll) Save() {
+func (p *Poll) Save() {
 	var b bytes.Buffer
 	enc := json.NewEncoder(&b)
 	enc.SetEscapeHTML(false)
@@ -114,24 +119,29 @@ func (p Poll) Save() {
 // ToggleVote inverts the voting status for the given user on a given option.
 func (p *Poll) ToggleVote(user, option string) {
 	log.Println("[INFO] toggleVote:", user, option)
-	_, ok := p.Votes[option]
+
+	p.muxVotes.Lock()
+	defer p.muxVotes.Unlock()
+	voters, ok := p.Votes[option]
 	if !ok {
 		log.Println("[ERROR] No 'option' in p.Votes for:", option)
 		return
 	}
 
-	_, voted := p.Votes[option][user]
-	if voted {
-		// Revoke the vote.
-		delete(p.Votes[option], user)
-	} else {
-		// Cast the vote.
-		p.Votes[option][user] = 1
+	for i, voter := range voters {
+		if voter == user {
+			// Remove voter from the list.
+			p.Votes[option] = append(voters[:i], voters[i+1:]...)
+			return
+		}
 	}
+	
+	// User wasn't found in the list of voters, so append it.
+	p.Votes[option] = append(voters, user)
 }
 
 // ToSlackAttachment renders a Poll into a Slack message Attachment.
-func (p Poll) ToSlackAttachment() *slack.Attachment {
+func (p *Poll) ToSlackAttachment() *slack.Attachment {
 	actions := make([]slack.AttachmentAction, len(p.Votes))
 	fields := make([]slack.AttachmentField, len(p.Votes))
 
@@ -145,7 +155,7 @@ func (p Poll) ToSlackAttachment() *slack.Attachment {
 		}
 
 		votersStr := ""
-		for userID := range voters {
+		for _, userID := range voters {
 			votersStr += fmt.Sprintf("<@%v> ", userID)
 		}
 
