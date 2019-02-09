@@ -56,17 +56,24 @@ func (h interactionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	action := message.Actions[0]
 	parts := strings.Split(action.Name, "_")
-
-	optionIndex, err := strconv.Atoi(parts[1])
-	if err != nil {
-		log.Printf("[ERROR] Invalid action name: %s", action.Name)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
 	p := poll.GetPollByID(parts[0])
-	p.ToggleVote(message.User.ID, optionIndex)
-	p.Save()
+
+	switch parts[1] {
+		case "delete":
+			p.Delete()
+
+		default:
+			optionIndex, err := strconv.Atoi(parts[1])
+			if err != nil {
+				log.Printf("[ERROR] Invalid action name: %s", action.Name)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+
+			p.ToggleVote(message.User.ID, optionIndex)
+			p.Save()
+
+	}
 
 	replacement := &slack.Msg{
 		ResponseType:    "in_channel",
