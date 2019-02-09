@@ -153,9 +153,14 @@ func (p *Poll) ToSlackAttachment() *slack.Attachment {
 			Type: "button",
 		}
 
-		votersStr := ""
-		for _, userID := range voters {
-			votersStr += fmt.Sprintf("<@%v> ", userID)
+		var votersStr string
+		if (len(option.Voters) == 0) {
+			votersStr = "(none)"
+		} else {
+			votersStr = ""
+			for _, userID := range option.Voters {
+				votersStr += fmt.Sprintf("<@%v> ", userID)
+			}
 		}
 
 		fields[i] = slack.AttachmentField{
