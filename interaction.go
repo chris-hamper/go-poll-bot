@@ -58,9 +58,18 @@ func (h interactionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(action.Name, "_")
 	p := poll.GetPollByID(parts[0])
 
+	var response *slack.Msg
 	switch parts[1] {
 		case "delete":
-			p.Delete()
+			if message.User.ID == p.Owner {
+			  p.Delete()
+			} else {
+				response = &slack.Msg{
+					ResponseType:    "ephemeral",
+					ReplaceOriginal: false,
+					Text:            "Sorry, only <@"+message.User.ID+"> can delete this poll.",
+				}
+			}
 
 		default:
 			optionIndex, err := strconv.Atoi(parts[1])
@@ -72,13 +81,14 @@ func (h interactionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			p.ToggleVote(message.User.ID, optionIndex)
 			p.Save()
-
 	}
 
-	replacement := &slack.Msg{
-		ResponseType:    "in_channel",
-		ReplaceOriginal: true,
-		Attachments:     []slack.Attachment{*p.ToSlackAttachment()},
+	if response == nil {
+		response = &slack.Msg{
+			ResponseType:    "in_channel",
+			ReplaceOriginal: true,
+			Attachments:     []slack.Attachment{*p.ToSlackAttachment()},
+		}
 	}
 
 	encoder := json.NewEncoder(w)
@@ -86,7 +96,7 @@ func (h interactionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	err = encoder.Encode(&replacement)
+	err = encoder.Encode(&response)
 	if err != nil {
 		log.Println("[ERROR] JSON Encode failed:", err)
 	}
