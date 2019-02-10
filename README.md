@@ -22,7 +22,7 @@ Before you begin, you'll need to have the bot running at a publicly accessible d
     "Title" "Choice 1" "Choice 2" ...
     ```
     Make sure "Escape channels, users, and links sent to your app" is enabled, and [Save]
-1. Under "OAuth & Permissions", make sure your app has permissions for **Send messages as Poll Bot** and **Add slash commands and add actions to messages (and view related content)** and [Save]
+1. Under "OAuth & Permissions", make sure your app has `chat:write:bot` and `commands` permissions. Click [Save]
 1. Under "Settings" select "Install App" and [Install App to Workplace]
 
 ## Starting the pollbot
