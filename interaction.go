@@ -45,7 +45,6 @@ func (h interactionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	log.Println("[DEBUG] Interaction:", jsonStr)
 
 	var message slack.AttachmentActionCallback
 	if err = json.Unmarshal([]byte(jsonStr), &message); err != nil {
