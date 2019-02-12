@@ -15,7 +15,7 @@ Before you begin, you'll need to have the bot running at a publicly accessible d
 1. Under "Features" select "Slash Commands" and [Create New Command]
 1. Pick a clear name for the command (ex. "/pollbot") and for the Request URL enter your bot's domain, followed by `/command`:
     ```
-    https://yourdomain.com/interaction
+    https://yourdomain.com/command
     ```
     For "Short Description", enter "Creates a poll". For "Usage Hint" enter:
     ```
