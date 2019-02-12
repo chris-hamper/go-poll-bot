@@ -15,6 +15,9 @@ import (
 	"github.com/nlopes/slack"
 )
 
+// expiration holds the number of seconds before polls are removed from Redis (60 days).
+const expiration = 60 * 24 * 60 * 60
+
 // Option represents on option in a poll, and holds the users who have voted for it.
 type Option struct {
 	Name string
@@ -113,7 +116,7 @@ func (p *Poll) Save() {
 	log.Println("[INFO] Saving poll to Redis store:", s)
 
 	pollKey := "poll:" + p.ID
-	err := db.Cmd("SET", pollKey, s).Err
+	err := db.Cmd("SET", pollKey, s, "EX", expiration).Err
 	if err != nil {
 		log.Println("[ERROR] Can't save poll", pollKey, "to Redis store:", err)
 	}
