@@ -20,16 +20,16 @@ const expiration = 60 * 24 * 60 * 60
 
 // Option represents on option in a poll, and holds the users who have voted for it.
 type Option struct {
-	Name string
+	Name   string
 	Voters []string
-	mux sync.Mutex // Protects "Voters" from being modified in parallel.
+	mux    sync.Mutex // Protects "Voters" from being modified in parallel.
 }
 
 // Poll holds all information related to a poll created via Slack.
 type Poll struct {
-	ID    string
-	Owner string
-	Title string
+	ID      string
+	Owner   string
+	Title   string
 	Options []Option
 	Deleted bool
 }
@@ -75,9 +75,9 @@ func CreatePoll(owner, title string, options []string) *Poll {
 	}
 
 	poll := Poll{
-		ID: strconv.Itoa(id),
-		Owner: owner,
-		Title: title,
+		ID:      strconv.Itoa(id),
+		Owner:   owner,
+		Title:   title,
 		Options: make([]Option, len(options)),
 	}
 	for i, name := range options {
@@ -137,7 +137,7 @@ func (p *Poll) ToggleVote(user string, optionIndex int) {
 			return
 		}
 	}
-	
+
 	// User wasn't found in the list of voters, so append it.
 	option.Voters = append(option.Voters, user)
 }
@@ -166,7 +166,7 @@ func (p *Poll) ToSlackAttachment() *slack.Attachment {
 			}
 
 			var votersStr string
-			if (len(option.Voters) == 0) {
+			if len(option.Voters) == 0 {
 				votersStr = "(none)"
 			} else {
 				votersStr = ""
@@ -185,13 +185,13 @@ func (p *Poll) ToSlackAttachment() *slack.Attachment {
 
 		// Append "Delete Poll" action
 		actions[numOptions] = slack.AttachmentAction{
-			Name: prefix + "delete",
-			Text: "Delete Poll",
-			Type: "button",
+			Name:  prefix + "delete",
+			Text:  "Delete Poll",
+			Type:  "button",
 			Style: "danger",
 			Confirm: &slack.ConfirmationField{
-				Title: "Delete poll \"" + p.Title + "\"?",
-				OkText: "Delete Poll",
+				Title:       "Delete poll \"" + p.Title + "\"?",
+				OkText:      "Delete Poll",
 				DismissText: "Keep Poll",
 			},
 		}

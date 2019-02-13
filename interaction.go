@@ -59,27 +59,27 @@ func (h interactionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	var response *slack.Msg
 	switch parts[1] {
-		case "delete":
-			if message.User.ID == p.Owner {
-			  p.Delete()
-			} else {
-				response = &slack.Msg{
-					ResponseType:    "ephemeral",
-					ReplaceOriginal: false,
-					Text:            "Sorry, only <@"+message.User.ID+"> can delete this poll.",
-				}
+	case "delete":
+		if message.User.ID == p.Owner {
+			p.Delete()
+		} else {
+			response = &slack.Msg{
+				ResponseType:    "ephemeral",
+				ReplaceOriginal: false,
+				Text:            "Sorry, only <@" + message.User.ID + "> can delete this poll.",
 			}
+		}
 
-		default:
-			optionIndex, err := strconv.Atoi(parts[1])
-			if err != nil {
-				log.Printf("[ERROR] Invalid action name: %s", action.Name)
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
+	default:
+		optionIndex, err := strconv.Atoi(parts[1])
+		if err != nil {
+			log.Printf("[ERROR] Invalid action name: %s", action.Name)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 
-			p.ToggleVote(message.User.ID, optionIndex)
-			p.Save()
+		p.ToggleVote(message.User.ID, optionIndex)
+		p.Save()
 	}
 
 	if response == nil {
