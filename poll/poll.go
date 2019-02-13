@@ -150,59 +150,59 @@ func (p *Poll) ToSlackAttachment() *slack.Attachment {
 			Fallback:   "Please use a client that supports interactive messages to see this poll.",
 			CallbackID: p.ID,
 		}
-	} else {
-		numOptions := len(p.Options)
-		actions := make([]slack.AttachmentAction, numOptions+1)
-		fields := make([]slack.AttachmentField, numOptions)
+	}
 
-		prefix := p.ID + "_"
-		for i := range p.Options {
-			option := &p.Options[i]
+	numOptions := len(p.Options)
+	actions := make([]slack.AttachmentAction, numOptions+1)
+	fields := make([]slack.AttachmentField, numOptions)
 
-			actions[i] = slack.AttachmentAction{
-				Name: prefix + strconv.Itoa(i),
-				Text: option.Name,
-				Type: "button",
-			}
+	prefix := p.ID + "_"
+	for i := range p.Options {
+		option := &p.Options[i]
 
-			var votersStr string
-			if len(option.Voters) == 0 {
-				votersStr = "(none)"
-			} else {
-				votersStr = ""
-				for _, userID := range option.Voters {
-					votersStr += fmt.Sprintf("<@%v> ", userID)
-				}
-			}
-
-			fields[i] = slack.AttachmentField{
-				Title: fmt.Sprintf("%v (%v)", option.Name, len(option.Voters)),
-				Value: votersStr,
-				Short: false,
-			}
-			i++
+		actions[i] = slack.AttachmentAction{
+			Name: prefix + strconv.Itoa(i),
+			Text: option.Name,
+			Type: "button",
 		}
 
-		// Append "Delete Poll" action
-		actions[numOptions] = slack.AttachmentAction{
-			Name:  prefix + "delete",
-			Text:  "Delete Poll",
-			Type:  "button",
-			Style: "danger",
-			Confirm: &slack.ConfirmationField{
-				Title:       "Delete poll \"" + p.Title + "\"?",
-				OkText:      "Delete Poll",
-				DismissText: "Keep Poll",
-			},
+		var votersStr string
+		if len(option.Voters) == 0 {
+			votersStr = "(none)"
+		} else {
+			votersStr = ""
+			for _, userID := range option.Voters {
+				votersStr += fmt.Sprintf("<@%v> ", userID)
+			}
 		}
 
-		return &slack.Attachment{
-			Title:      "Poll: " + p.Title,
-			Fallback:   "Please use a client that supports interactive messages to see this poll.",
-			CallbackID: p.ID,
-			Fields:     fields,
-			Actions:    actions,
+		fields[i] = slack.AttachmentField{
+			Title: fmt.Sprintf("%v (%v)", option.Name, len(option.Voters)),
+			Value: votersStr,
+			Short: false,
 		}
+		i++
+	}
+
+	// Append "Delete Poll" action.
+	actions[numOptions] = slack.AttachmentAction{
+		Name:  prefix + "delete",
+		Text:  "Delete Poll",
+		Type:  "button",
+		Style: "danger",
+		Confirm: &slack.ConfirmationField{
+			Title:       "Delete poll \"" + p.Title + "\"?",
+			OkText:      "Delete Poll",
+			DismissText: "Keep Poll",
+		},
+	}
+
+	return &slack.Attachment{
+		Title:      "Poll: " + p.Title,
+		Fallback:   "Please use a client that supports interactive messages to see this poll.",
+		CallbackID: p.ID,
+		Fields:     fields,
+		Actions:    actions,
 	}
 }
 
