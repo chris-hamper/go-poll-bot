@@ -1,4 +1,7 @@
 # Go-slack-poll
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/chris-hamper/go-poll-bot)](https://goreportcard.com/badge/github.com/chris-hamper/go-poll-bot)
+
 A simple Slack app that provides multiple-choice polling functionality. Users can vote for one or more choices by clicking on buttons in an interactive Slack message created by the bot using a Slack slash command.
 
 ## Adding the pollbot to your Slack workspace
