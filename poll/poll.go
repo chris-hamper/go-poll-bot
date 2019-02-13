@@ -181,7 +181,6 @@ func (p *Poll) ToSlackAttachment() *slack.Attachment {
 			Value: votersStr,
 			Short: false,
 		}
-		i++
 	}
 
 	// Append "Delete Poll" action.
