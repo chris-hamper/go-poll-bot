@@ -26,7 +26,7 @@ func (h interactionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Only accept message from slack with valid token.
-	if !validateRequest(r) {
+	if !validateRequest(r, h.signingSecret) {
 		log.Printf("[ERROR] Message validation failed")
 		w.WriteHeader(http.StatusUnauthorized)
 		return

@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/csv"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -16,72 +14,16 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/chris-hamper/go-slack-poll/poll"
-	"github.com/nlopes/slack"
 )
 
 //var smartQuoteReplacer = strings.NewReplacer("“", "\"", "”", "\"")
 
-var signingSecret []byte
-
 func main() {
-	signingSecret = []byte(strings.TrimSpace(os.Getenv("SLACK_SIGNING_SECRET")))
+	signingSecret := []byte(strings.TrimSpace(os.Getenv("SLACK_SIGNING_SECRET")))
 
 	// @todo - move to separate handler file
-	http.HandleFunc("/command", func(w http.ResponseWriter, r *http.Request) {
-		if !validateRequest(r) {
-			log.Printf("[ERROR] Message validation failed")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-		// @todo - sanitization?
-		cmd, err := slack.SlashCommandParse(r)
-		if err != nil {
-			log.Println("[ERROR] SlashCommandParse failed:", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		log.Println("[DEBUG] Command:", cmd)
-
-		switch cmd.Command {
-		case "/pollbot":
-			// Clean up "smart quotes".
-			text := strings.Map(normalizeQuotes, cmd.Text)
-
-			// Split command text on spaces, except inside quotes.
-			csv := csv.NewReader(strings.NewReader(text))
-			csv.Comma = ' '
-			args, err := csv.Read()
-			if err != nil {
-				log.Println("[ERROR] Command text split failed:", err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			// Create the poll.
-			p := poll.CreatePoll(cmd.UserID, args[0], args[1:])
-			p.Save()
-
-			params := &slack.Msg{
-				ResponseType: "in_channel",
-				Attachments:  []slack.Attachment{*p.ToSlackAttachment()},
-			}
-
-			b, err := json.Marshal(params)
-			if err != nil {
-				log.Println("[ERROR] JSON Marshal failed:", err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			w.Header().Set("Content-Type", "application/json")
-			w.Write(b)
-
-		default:
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+	http.Handle("/command", commandHandler{
+		signingSecret: signingSecret,
 	})
 
 	// Register handler to receive interactive messages from slack.
@@ -97,15 +39,7 @@ func main() {
 	http.ListenAndServe(":3000", nil)
 }
 
-func normalizeQuotes(r rune) rune {
-	switch r {
-	case '“', '”':
-		return '"'
-	}
-	return r
-}
-
-func validateRequest(r *http.Request) bool {
+func validateRequest(r *http.Request, signingSecret []byte) bool {
 	timestamp := r.Header["X-Slack-Request-Timestamp"][0]
 
 	// Verify the timestamp is less than 5 minutes old, to avoid replay attacks.
